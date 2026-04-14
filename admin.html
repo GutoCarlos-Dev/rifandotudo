@@ -12,17 +12,32 @@
             <button class="btn" style="background: #ef4444; width: auto;" onclick="app.logout()">Sair</button>
         </div>
 
-        <div id="form-raffle" class="admin-section">
-            <h3>Criar Nova Rifa</h3>
-            <input type="text" id="title" placeholder="Título">
-            <input type="number" id="price" placeholder="Preço (R$)">
-            <input type="number" id="total" placeholder="Qtd Números">
-            <input type="text" id="pix" placeholder="Chave PIX do Cliente">
-            <button class="btn" onclick="app.saveRaffle()">Criar Rifa</button>
+        <!-- Navegação por Abas -->
+        <div class="auth-tabs" style="margin-bottom: 30px;">
+            <button id="tab-raffles" class="active" onclick="app.showSection('raffles')">Minhas Rifas</button>
+            <button id="tab-sales" onclick="app.showSection('sales')">Gerenciar Vendas</button>
         </div>
 
-        <h2 style="margin-bottom: 24px;">Minhas Rifas Ativas</h2>
-        <div id="raffle-list" class="raffle-list-container"></div>
+        <!-- Seção de Rifas -->
+        <div id="section-raffles">
+            <div id="form-raffle" class="admin-section">
+                <h3>Criar Nova Rifa</h3>
+                <input type="text" id="title" placeholder="Título">
+                <input type="number" id="price" placeholder="Preço (R$)">
+                <input type="number" id="total" placeholder="Qtd Números">
+                <input type="text" id="pix" placeholder="Chave PIX do Cliente">
+                <button class="btn" onclick="app.saveRaffle()">Criar Rifa</button>
+            </div>
+
+            <h2 style="margin-bottom: 24px;">Minhas Rifas Ativas</h2>
+            <div id="raffle-list" class="raffle-list-container"></div>
+        </div>
+
+        <!-- Seção de Vendas (Pendentes) -->
+        <div id="section-sales" style="display: none;">
+            <h2 style="margin-bottom: 24px;">Aprovações Pendentes</h2>
+            <div id="sales-list" class="raffle-list-container"></div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -36,6 +51,20 @@
                     window.location.href = 'login.html';
                 }
                 return user;
+            },
+
+            showSection(section) {
+                document.getElementById('section-raffles').style.display = section === 'raffles' ? 'block' : 'none';
+                document.getElementById('section-sales').style.display = section === 'sales' ? 'block' : 'none';
+                
+                document.getElementById('tab-raffles').classList.toggle('active', section === 'raffles');
+                document.getElementById('tab-sales').classList.toggle('active', section === 'sales');
+
+                if (section === 'raffles') {
+                    this.fetchRaffles();
+                } else {
+                    this.fetchPendingSales();
+                }
             },
 
             async saveRaffle() {
@@ -92,6 +121,62 @@
                 else {
                     alert("Rifa excluída com sucesso!");
                     this.fetchRaffles();
+                }
+            },
+
+            async fetchPendingSales() {
+                const user = await this.checkUser();
+                
+                // Primeiro pegamos os IDs das rifas que pertencem ao usuário
+                const { data: userRaffles } = await _supabase.from('raffles').select('id').eq('owner_id', user.id);
+                const raffleIds = userRaffles.map(r => r.id);
+
+                // Buscamos os tickets pendentes dessas rifas
+                const { data: tickets, error } = await _supabase
+                    .from('tickets')
+                    .select('*, raffles(title)')
+                    .in('raffle_id', raffleIds)
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                const list = document.getElementById('sales-list');
+                if (!tickets || tickets.length === 0) {
+                    list.innerHTML = "<p>Nenhuma venda pendente para aprovação.</p>";
+                    return;
+                }
+
+                list.innerHTML = tickets.map(ticket => `
+                    <div class="raffle-card">
+                        <div class="raffle-card-content">
+                            <h3 style="margin-bottom: 5px;">${this.escapeHTML(ticket.raffles.title)}</h3>
+                            <p><strong>Comprador:</strong> ${this.escapeHTML(ticket.buyer_name)}</p>
+                            <p><strong>WhatsApp:</strong> ${this.escapeHTML(ticket.buyer_phone)}</p>
+                            <p><strong>Número Escolhido:</strong> <span class="badge" style="background: var(--primary); color: white;">${ticket.number_selected}</span></p>
+                            
+                            <div class="raffle-actions">
+                                <button class="btn" style="background: var(--success); flex: 1;" onclick="app.updateTicketStatus('${ticket.id}', 'paid')">Confirmar Pagamento</button>
+                                <button class="btn" style="background: #ef4444; flex: 1;" onclick="app.updateTicketStatus('${ticket.id}', 'cancelled')">Recusar</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            async updateTicketStatus(ticketId, newStatus) {
+                const action = newStatus === 'paid' ? 'confirmar' : 'cancelar';
+                if (!confirm(`Deseja realmente ${action} esta reserva?`)) return;
+
+                let error;
+                if (newStatus === 'paid') {
+                    ({ error } = await _supabase.from('tickets').update({ status: 'paid' }).eq('id', ticketId));
+                } else {
+                    ({ error } = await _supabase.from('tickets').delete().eq('id', ticketId));
+                }
+
+                if (error) alert("Erro: " + error.message);
+                else {
+                    alert("Atualizado com sucesso!");
+                    this.fetchPendingSales();
                 }
             },
 
