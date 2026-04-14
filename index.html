@@ -7,20 +7,31 @@
 </head>
 <body>
     <div class="container">
-        <h1 id="raffle-title">Carregando rifa...</h1>
-        <p id="raffle-desc"></p>
-        
-        <div class="grid-rifa" id="grid">
-            <!-- Números serão gerados via JS -->
+        <div id="home-view" style="display: none;">
+            <h1>Rifas Disponíveis</h1>
+            <div id="raffle-list" class="raffle-list-container">
+                <!-- Lista de rifas será carregada aqui -->
+            </div>
         </div>
 
-        <div id="checkout" style="margin-top: 20px; display: none;">
-            <h3>Finalizar Reserva</h3>
-            <p>Números: <span id="num-selected"></span></p>
-            <p><strong>Total a pagar: R$ <span id="total-price">0,00</span></strong></p>
-            <input type="text" id="buyer-name" placeholder="Seu Nome">
-            <input type="text" id="buyer-phone" placeholder="WhatsApp">
-            <button class="btn" onclick="buy()">Reservar e Pagar via PIX</button>
+        <div id="raffle-detail-view" style="display: none;">
+            <h1 id="raffle-title">Carregando rifa...</h1>
+            <p id="raffle-desc"></p>
+            
+            <div class="grid-rifa" id="grid">
+                <!-- Números serão gerados via JS -->
+            </div>
+
+            <div id="checkout" style="margin-top: 20px; display: none;">
+                <h3>Finalizar Reserva</h3>
+                <p>Números: <span id="num-selected"></span></p>
+                <p><strong>Total a pagar: R$ <span id="total-price">0,00</span></strong></p>
+                <input type="text" id="buyer-name" placeholder="Seu Nome">
+                <input type="text" id="buyer-phone" placeholder="WhatsApp">
+                <button class="btn" onclick="buy()">Reservar e Pagar via PIX</button>
+            </div>
+            <br>
+            <a href="index.html" class="btn-back">Voltar para a lista</a>
         </div>
     </div>
 
@@ -35,10 +46,42 @@
 
         async function init() {
             if (!raffleId) {
-                document.body.innerHTML = "<h1>Erro: ID da rifa não encontrado.</h1>";
+                loadAllRaffles();
+                return;
+            }
+            loadRaffleDetails(raffleId);
+        }
+
+        async function loadAllRaffles() {
+            document.getElementById('home-view').style.display = 'block';
+            const listContainer = document.getElementById('raffle-list');
+            
+            const { data: raffles, error } = await _supabase
+                .from('raffles')
+                .select('*');
+
+            if (error) {
+                listContainer.innerHTML = "<p>Erro ao carregar rifas.</p>";
                 return;
             }
 
+            if (raffles.length === 0) {
+                listContainer.innerHTML = "<p>Nenhuma rifa ativa no momento.</p>";
+                return;
+            }
+
+            listContainer.innerHTML = raffles.map(raffle => `
+                <div class="raffle-card" onclick="window.location.href='index.html?id=${raffle.id}'">
+                    <h3>${raffle.title}</h3>
+                    <p>Preço por número: R$ ${raffle.ticket_price}</p>
+                    <button class="btn">Ver Números</button>
+                </div>
+            `).join('');
+        }
+
+        async function loadRaffleDetails(id) {
+            document.getElementById('raffle-detail-view').style.display = 'block';
+            
             // 1. Buscar dados da Rifa
             const { data: raffle, error: raffleError } = await _supabase
                 .from('raffles')
