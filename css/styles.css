@@ -1,0 +1,15 @@
+:root { --primary: #2563eb; --success: #16a34a; --bg: #f8fafc; }
+body { font-family: sans-serif; background: var(--bg); padding: 20px; }
+.container { max-width: 800px; margin: 0 auto; }
+.grid-rifa { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); 
+    gap: 10px; margin-top: 20px; 
+}
+.numero { 
+    padding: 15px; border: 1px solid #ccc; text-align: center; 
+    cursor: pointer; border-radius: 8px; background: white;
+}
+.numero.selecionado { background: var(--primary); color: white; }
+.numero.pago { background: #e2e8f0; cursor: not-allowed; color: #94a3b8; }
+.btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
