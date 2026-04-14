@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/styles.css">
+    <title>Painel Administrativo - Rifas</title>
+</head>
+<body>
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>Gerenciador de Rifas</h1>
+            <button class="btn" style="background: #dc2626;" onclick="app.logout()">Sair</button>
+        </div>
+
+        <div id="form-raffle">
+            <h3>Criar Nova Rifa</h3>
+            <input type="text" id="title" placeholder="Título">
+            <input type="number" id="price" placeholder="Preço (R$)">
+            <input type="number" id="total" placeholder="Qtd Números">
+            <input type="text" id="pix" placeholder="Chave PIX do Cliente">
+            <button class="btn" onclick="app.saveRaffle()">Criar Rifa</button>
+        </div>
+
+        <hr>
+        <h2>Minhas Rifas Ativas</h2>
+        <div id="raffle-list"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module">
+        import { _supabase } from './js/config.js';
+        
+        const app = {
+            async checkUser() {
+                const { data: { user } } = await _supabase.auth.getUser();
+                if (!user) {
+                    window.location.href = 'login.html';
+                }
+                return user;
+            },
+
+            async saveRaffle() {
+                const user = await this.checkUser();
+                if (!user) return;
+
+                const title = document.getElementById('title').value;
+                const price = document.getElementById('price').value;
+                const total = document.getElementById('total').value;
+                const pix = document.getElementById('pix').value;
+
+                // 2. Insere a rifa passando o owner_id (ID do usuário)
+                const { data, error } = await _supabase.from('raffles').insert([{ 
+                    title, 
+                    ticket_price: price, 
+                    total_numbers: total, 
+                    pix_key: pix,
+                    owner_id: user.id 
+                }]);
+
+                if (error) alert("Erro ao criar: " + error.message);
+                else { alert("Sucesso!"); location.reload(); }
+            },
+            
+            async logout() {
+                await _supabase.auth.signOut();
+                window.location.href = 'login.html';
+            },
+
+            // Função para prevenir ataques XSS ao renderizar textos do banco
+            escapeHTML(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            },
+
+            copyLink(url) {
+                navigator.clipboard.writeText(url);
+                alert("Link da rifa copiado com sucesso!");
+            },
+
+            shareWhatsapp(url, title) {
+                const text = encodeURIComponent(`Olá! Participe da minha rifa: ${title}\nEscolha seus números aqui: ${url}`);
+                const whatsappUrl = `https://wa.me/?text=${text}`;
+                window.open(whatsappUrl, '_blank');
+            },
+
+            async deleteRaffle(id) {
+                if (!confirm("Tem certeza que deseja excluir esta rifa? Todos os dados e tickets serão perdidos.")) return;
+
+                const { error } = await _supabase.from('raffles').delete().eq('id', id);
+
+                if (error) alert("Erro ao excluir: " + error.message);
+                else {
+                    alert("Rifa excluída com sucesso!");
+                    this.fetchRaffles();
+                }
+            },
+
+            async fetchRaffles() {
+                const user = await this.checkUser();
+                if (!user) return;
+
+                const { data, error } = await _supabase
+                    .from('raffles')
+                    .select('*')
+                    .eq('owner_id', user.id) // Segurança: Filtra apenas as rifas do dono
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.error("Erro ao buscar rifas:", error.message);
+                    return;
+                }
+
+                const list = document.getElementById('raffle-list');
+                list.innerHTML = data.map(raffle => {
+                    // Constrói a URL pública baseada na localização atual
+                    const publicUrl = `${window.location.origin}${window.location.pathname.replace('admin.html', 'index.html')}?id=${raffle.id}`;
+                    
+                    const safeTitle = this.escapeHTML(raffle.title);
+                    const safePrice = this.escapeHTML(raffle.ticket_price.toString());
+
+                    return `
+                        <div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 8px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div>
+                                    <strong style="font-size: 1.2em;">${safeTitle}</strong><br>
+                                    <span style="color: #666;">R$ ${safePrice} por número | ${raffle.total_numbers} números no total</span>
+                                </div>
+                                <span class="badge" style="background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">${raffle.status}</span>
+                            </div>
+                            
+                            <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button class="btn" style="background: #64748b; font-size: 0.9em;" onclick="app.copyLink('${publicUrl}')">Copiar Link</button>
+                                <button class="btn" style="background: #25d366; font-size: 0.9em;" onclick="app.shareWhatsapp('${publicUrl}', '${safeTitle}')">WhatsApp</button>
+                                <a href="index.html?id=${raffle.id}" target="_blank" style="text-decoration: none; color: var(--primary); font-size: 0.9em; align-self: center;">Visualizar Página</a>
+                                <button class="btn" style="background: #ef4444; font-size: 0.9em; margin-left: auto;" onclick="app.deleteRaffle('${raffle.id}')">Excluir</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        };
+        window.app = app;
+        app.checkUser();
+        app.fetchRaffles();
+    </script>
+</body>
+</html>

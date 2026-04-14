@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/styles.css">
+    <title>Login - Plataforma de Rifas</title>
+    <style>
+        .auth-card { max-width: 400px; margin: 100px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .auth-card input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .auth-card h2 { text-align: center; color: var(--primary); }
+        .auth-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .auth-tabs button { flex: 1; padding: 10px; cursor: pointer; border: none; background: #eee; }
+        .auth-tabs button.active { background: var(--primary); color: white; }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <h2 id="auth-title">Entrar no Sistema</h2>
+        <div class="auth-tabs">
+            <button id="tab-login" class="active" onclick="setMode('login')">Login</button>
+            <button id="tab-signup" onclick="setMode('signup')">Cadastro</button>
+        </div>
+        
+        <input type="email" id="email" placeholder="Seu E-mail">
+        <input type="password" id="password" placeholder="Sua Senha">
+        
+        <button class="btn" id="auth-btn" style="width: 100%;" onclick="handleAuth()">Entrar</button>
+        <p id="auth-msg" style="color: red; font-size: 0.9em; margin-top: 10px;"></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module">
+        import { _supabase } from './js/config.js';
+
+        let mode = 'login';
+
+        window.setMode = (newMode) => {
+            mode = newMode;
+            document.getElementById('auth-title').innerText = mode === 'login' ? 'Entrar no Sistema' : 'Criar Conta';
+            document.getElementById('auth-btn').innerText = mode === 'login' ? 'Entrar' : 'Cadastrar';
+            document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+            document.getElementById('tab-signup').classList.toggle('active', mode === 'signup');
+        };
+
+        window.handleAuth = async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const msg = document.getElementById('auth-msg');
+
+            const { data, error } = mode === 'login' 
+                ? await _supabase.auth.signInWithPassword({ email, password })
+                : await _supabase.auth.signUp({ email, password });
+
+            if (error) {
+                msg.innerText = error.message;
+                msg.style.color = "red";
+            } else {
+                if (mode === 'signup' && !data.session) {
+                    msg.innerText = "Cadastro realizado! Por favor, verifique seu e-mail para confirmar a conta.";
+                    msg.style.color = "var(--success)";
+                } else {
+                    window.location.href = 'admin.html';
+                }
+            }
+        };
+    </script>
+</body>
+</html>

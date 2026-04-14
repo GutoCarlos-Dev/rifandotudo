@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/styles.css">
+    <title>Escolha seu número</title>
+</head>
+<body>
+    <div class="container">
+        <h1 id="raffle-title">Carregando rifa...</h1>
+        <p id="raffle-desc"></p>
+        
+        <div class="grid-rifa" id="grid">
+            <!-- Números serão gerados via JS -->
+        </div>
+
+        <div id="checkout" style="margin-top: 20px; display: none;">
+            <h3>Finalizar Reserva</h3>
+            <p>Números: <span id="num-selected"></span></p>
+            <p><strong>Total a pagar: R$ <span id="total-price">0,00</span></strong></p>
+            <input type="text" id="buyer-name" placeholder="Seu Nome">
+            <input type="text" id="buyer-phone" placeholder="WhatsApp">
+            <button class="btn" onclick="buy()">Reservar e Pagar via PIX</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script type="module">
+        import { _supabase } from './js/config.js';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const raffleId = urlParams.get('id');
+        let selectedNumbers = [];
+        let ticketPrice = 0;
+
+        async function init() {
+            if (!raffleId) {
+                document.body.innerHTML = "<h1>Erro: ID da rifa não encontrado.</h1>";
+                return;
+            }
+
+            // 1. Buscar dados da Rifa
+            const { data: raffle, error: raffleError } = await _supabase
+                .from('raffles')
+                .select('*')
+                .eq('id', raffleId)
+                .single();
+
+            if (raffleError || !raffle) {
+                console.error(raffleError);
+                document.getElementById('raffle-title').innerText = "Rifa não encontrada";
+                return;
+            }
+
+            document.getElementById('raffle-title').innerText = raffle.title;
+            document.getElementById('raffle-desc').innerText = `Valor: R$ ${raffle.ticket_price} por número.`;
+            ticketPrice = raffle.ticket_price;
+
+            // 2. Buscar números já ocupados
+            const { data: soldTickets } = await _supabase
+                .from('tickets')
+                .select('number_selected, status')
+                .eq('raffle_id', raffleId);
+
+            const occupiedNumbers = soldTickets ? soldTickets.map(t => t.number_selected) : [];
+
+            // 3. Renderizar Grid
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= raffle.total_numbers; i++) {
+                const div = document.createElement('div');
+                div.innerText = i;
+                div.className = 'numero';
+                
+                if (occupiedNumbers.includes(i)) {
+                    div.classList.add('pago');
+                } else {
+                    div.onclick = () => selectNumber(i, div);
+                }
+                grid.appendChild(div);
+            }
+        }
+
+        function selectNumber(num, element) {
+            if (selectedNumbers.includes(num)) {
+                // Deselecionar
+                selectedNumbers = selectedNumbers.filter(n => n !== num);
+                element.classList.remove('selecionado');
+            } else {
+                // Selecionar
+                selectedNumbers.push(num);
+                element.classList.add('selecionado');
+            }
+            
+            const total = (selectedNumbers.length * ticketPrice).toFixed(2);
+            
+            document.getElementById('num-selected').innerText = selectedNumbers.sort((a,b) => a-b).join(', ');
+            document.getElementById('total-price').innerText = total.replace('.', ',');
+            document.getElementById('checkout').style.display = selectedNumbers.length > 0 ? 'block' : 'none';
+        }
+
+        async function buy() {
+            const name = document.getElementById('buyer-name').value;
+            const phone = document.getElementById('buyer-phone').value;
+
+            if (!name || !phone) {
+                alert("Por favor, preencha nome e telefone.");
+                return;
+            }
+
+            // Prepara a lista de tickets para inserção em massa
+            const ticketsToInsert = selectedNumbers.map(num => ({
+                raffle_id: raffleId,
+                number_selected: num,
+                buyer_name: name,
+                buyer_phone: phone,
+                status: 'pending'
+            }));
+
+            // Tenta reservar todos os números
+            const { error } = await _supabase
+                .from('tickets')
+                .insert(ticketsToInsert);
+
+            if (error) {
+                alert("Um ou mais números selecionados já foram reservados. A página será atualizada.");
+                location.reload();
+            } else {
+                alert("Reserva realizada! Prepare seu PIX.");
+                // Aqui futuramente chamaremos a geração do QR Code
+            }
+        }
+
+        window.buy = buy; // Torna a função global para o botão
+        init();
+    </script>
+</body>
+</html>
