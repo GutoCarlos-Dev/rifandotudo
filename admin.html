@@ -7,12 +7,12 @@
 </head>
 <body>
     <div class="container">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="admin-header">
             <h1>Gerenciador de Rifas</h1>
-            <button class="btn" style="background: #dc2626;" onclick="app.logout()">Sair</button>
+            <button class="btn" style="background: #ef4444; width: auto;" onclick="app.logout()">Sair</button>
         </div>
 
-        <div id="form-raffle">
+        <div id="form-raffle" class="admin-section">
             <h3>Criar Nova Rifa</h3>
             <input type="text" id="title" placeholder="Título">
             <input type="number" id="price" placeholder="Preço (R$)">
@@ -21,9 +21,8 @@
             <button class="btn" onclick="app.saveRaffle()">Criar Rifa</button>
         </div>
 
-        <hr>
-        <h2>Minhas Rifas Ativas</h2>
-        <div id="raffle-list"></div>
+        <h2 style="margin-bottom: 24px;">Minhas Rifas Ativas</h2>
+        <div id="raffle-list" class="raffle-list-container"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -120,20 +119,21 @@
                     const safePrice = this.escapeHTML(raffle.ticket_price.toString());
 
                     return `
-                        <div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; border-radius: 8px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <div>
-                                    <strong style="font-size: 1.2em;">${safeTitle}</strong><br>
-                                    <span style="color: #666;">R$ ${safePrice} por número | ${raffle.total_numbers} números no total</span>
+                        <div class="raffle-card">
+                            <div class="raffle-card-content">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                                    <h3 style="margin:0">${safeTitle}</h3>
+                                    <span class="badge">${raffle.status}</span>
                                 </div>
-                                <span class="badge" style="background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-size: 0.8em;">${raffle.status}</span>
-                            </div>
-                            
-                            <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-                                <button class="btn" style="background: #64748b; font-size: 0.9em;" onclick="app.copyLink('${publicUrl}')">Copiar Link</button>
-                                <button class="btn" style="background: #25d366; font-size: 0.9em;" onclick="app.shareWhatsapp('${publicUrl}', '${safeTitle}')">WhatsApp</button>
-                                <a href="index.html?id=${raffle.id}" target="_blank" style="text-decoration: none; color: var(--primary); font-size: 0.9em; align-self: center;">Visualizar Página</a>
-                                <button class="btn" style="background: #ef4444; font-size: 0.9em; margin-left: auto;" onclick="app.deleteRaffle('${raffle.id}')">Excluir</button>
+                                <p class="raffle-price">R$ ${parseFloat(safePrice).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                                <p class="raffle-info">${raffle.total_numbers} números no total</p>
+                                
+                                <div class="raffle-actions">
+                                    <button class="btn" style="background: #64748b; flex: 1;" onclick="app.copyLink('${publicUrl}')">Link</button>
+                                    <button class="btn" style="background: #22c55e; flex: 1;" onclick="app.shareWhatsapp('${publicUrl}', '${safeTitle}')">Zap</button>
+                                    <a href="index.html?id=${raffle.id}" target="_blank" class="btn" style="background: var(--primary); text-decoration: none; flex: 1; text-align: center; display: flex; align-items: center; justify-content: center;">Ver</a>
+                                    <button class="btn" style="background: #ef4444; flex: 1;" onclick="app.deleteRaffle('${raffle.id}')">Excluir</button>
+                                </div>
                             </div>
                         </div>
                     `;
