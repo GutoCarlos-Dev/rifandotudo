@@ -1,15 +1,109 @@
-:root { --primary: #2563eb; --success: #16a34a; --bg: #f8fafc; }
-body { font-family: sans-serif; background: var(--bg); padding: 20px; }
-.container { max-width: 800px; margin: 0 auto; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+:root { 
+    --primary: #2563eb; 
+    --success: #16a34a; 
+    --bg: #f8fafc; 
+    --text-dark: #1e293b;
+    --text-muted: #64748b;
+    --white: #ffffff;
+}
+
+body { 
+    font-family: 'Inter', sans-serif; 
+    background: var(--bg); 
+    padding: 0; 
+    margin: 0;
+    color: var(--text-dark);
+}
+
+.container { 
+    max-width: 1000px; 
+    margin: 0 auto; 
+    padding: 40px 20px; 
+}
+
+/* Estilização dos Cards */
+.raffle-list-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    margin-top: 30px;
+}
+
+.raffle-card {
+    background: var(--white);
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
+.raffle-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px -5px rgba(0,0,0,0.1);
+}
+
+.raffle-card-content {
+    padding: 24px;
+}
+
+.raffle-card h3 {
+    margin: 0 0 12px 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.raffle-price {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin: 10px 0;
+}
+
+.raffle-info {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
 .grid-rifa { 
     display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); 
-    gap: 10px; margin-top: 20px; 
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); 
+    gap: 8px; margin-top: 20px; 
 }
 .numero { 
-    padding: 15px; border: 1px solid #ccc; text-align: center; 
-    cursor: pointer; border-radius: 8px; background: white;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0; 
+    text-align: center; 
+    cursor: pointer; 
+    border-radius: 6px; 
+    background: white;
+    font-weight: 600;
 }
 .numero.selecionado { background: var(--primary); color: white; }
 .numero.pago { background: #e2e8f0; cursor: not-allowed; color: #94a3b8; }
-.btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+.btn { 
+    background: var(--primary); 
+    color: white; 
+    border: none; 
+    padding: 12px 24px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-weight: 600;
+    width: 100%;
+}
+.btn-back {
+    display: inline-block;
+    margin-top: 30px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+}
