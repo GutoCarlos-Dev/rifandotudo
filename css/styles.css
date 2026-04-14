@@ -171,3 +171,24 @@ input:focus {
     padding-top: 20px;
     border-top: 1px solid #f1f5f9;
 }
+
+/* Estilos para a Confirmação de Pagamento */
+.payment-card {
+    background: #fff;
+    padding: 30px;
+    border-radius: 16px;
+    border: 2px dashed var(--primary);
+    text-align: center;
+    margin-top: 20px;
+}
+
+.pix-box {
+    background: #f1f5f9;
+    padding: 15px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 1.1rem;
+    margin: 15px 0;
+    word-break: break-all;
+    border: 1px solid #e2e8f0;
+}

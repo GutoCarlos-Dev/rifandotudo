@@ -34,6 +34,18 @@
                 <input type="text" id="buyer-phone" placeholder="WhatsApp">
                 <button class="btn" onclick="buy()">Reservar e Pagar via PIX</button>
             </div>
+
+            <div id="payment-screen" style="display: none;" class="payment-card">
+                <h2 style="color: var(--success)">Reserva Realizada! 🎉</h2>
+                <p>Para confirmar sua participação, faça o PIX:</p>
+                <div class="pix-box" id="display-pix">---</div>
+                <p>Valor Total: <strong id="display-total">R$ 0,00</strong></p>
+                <button class="btn" style="background: #64748b; margin-bottom: 10px;" onclick="copyPix()">Copiar Chave PIX</button>
+                <button class="btn" style="background: #25d366;" onclick="sendWhatsAppProof()">Enviar Comprovante pelo WhatsApp</button>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 15px;">
+                    Sua reserva expira em 30 minutos caso o pagamento não seja enviado.
+                </p>
+            </div>
             <br>
             <a href="index.html" class="btn-back">Voltar para a lista</a>
         </div>
@@ -47,6 +59,7 @@
         const raffleId = urlParams.get('id');
         let selectedNumbers = [];
         let ticketPrice = 0;
+        let raffleData = null;
 
         async function init() {
             if (!raffleId) {
@@ -104,6 +117,7 @@
 
             document.getElementById('raffle-title').innerText = raffle.title;
             document.getElementById('raffle-desc').innerText = `Valor: R$ ${raffle.ticket_price} por número.`;
+            raffleData = raffle;
             ticketPrice = raffle.ticket_price;
 
             // 2. Buscar números já ocupados
@@ -177,9 +191,40 @@
                 alert("Um ou mais números selecionados já foram reservados. A página será atualizada.");
                 location.reload();
             } else {
-                alert("Reserva realizada! Prepare seu PIX.");
-                // Aqui futuramente chamaremos a geração do QR Code
+                showPaymentScreen();
             }
+        }
+
+        function showPaymentScreen() {
+            document.getElementById('grid').style.display = 'none';
+            document.getElementById('checkout').style.display = 'none';
+            document.getElementById('payment-screen').style.display = 'block';
+            
+            const total = (selectedNumbers.length * ticketPrice).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+            document.getElementById('display-pix').innerText = raffleData.pix_key;
+            document.getElementById('display-total').innerText = total;
+        }
+
+        window.copyPix = () => {
+            const pix = document.getElementById('display-pix').innerText;
+            navigator.clipboard.writeText(pix);
+            alert("Chave PIX copiada!");
+        }
+
+        window.sendWhatsAppProof = () => {
+            const name = document.getElementById('buyer-name').value;
+            const numbers = selectedNumbers.sort((a,b) => a-b).join(', ');
+            const total = (selectedNumbers.length * ticketPrice).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+            
+            const text = encodeURIComponent(
+                `✅ *Comprovante de Reserva*\n\n` +
+                `*Rifa:* ${raffleData.title}\n` +
+                `*Nome:* ${name}\n` +
+                `*Números:* ${numbers}\n` +
+                `*Total:* ${total}\n\n` +
+                `Estou enviando o comprovante em anexo...`
+            );
+            window.open(`https://wa.me/${raffleData.pix_key.replace(/\D/g,'')}?text=${text}`, '_blank');
         }
 
         window.buy = buy; // Torna a função global para o botão
