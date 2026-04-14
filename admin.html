@@ -38,7 +38,20 @@
         <!-- Seção de Vendas (Pendentes) -->
         <div id="section-sales" style="display: none;">
             <h2 style="margin-bottom: 24px;">Aprovações Pendentes</h2>
-            <div id="sales-list" class="raffle-list-container"></div>
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Rifa</th>
+                            <th>Comprador</th>
+                            <th>WhatsApp</th>
+                            <th>Número</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sales-list"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -147,24 +160,23 @@
 
                 const list = document.getElementById('sales-list');
                 if (!tickets || tickets.length === 0) {
-                    list.innerHTML = "<p>Nenhuma venda pendente para aprovação.</p>";
+                    list.innerHTML = "<tr><td colspan='5' style='text-align:center; padding: 20px;'>Nenhuma venda pendente para aprovação.</td></tr>";
                     return;
                 }
 
                 list.innerHTML = tickets.map(ticket => `
-                    <div class="raffle-card">
-                        <div class="raffle-card-content">
-                            <h3 style="margin-bottom: 5px;">${this.escapeHTML(ticket.raffles.title)}</h3>
-                            <p><strong>Comprador:</strong> ${this.escapeHTML(ticket.buyer_name)}</p>
-                            <p><strong>WhatsApp:</strong> ${this.escapeHTML(ticket.buyer_phone)}</p>
-                            <p><strong>Número Escolhido:</strong> <span class="badge" style="background: var(--primary); color: white;">${ticket.number_selected}</span></p>
-                            
-                            <div class="raffle-actions">
-                                <button class="btn" style="background: var(--success); flex: 1;" onclick="app.updateTicketStatus('${ticket.id}', 'paid')">Confirmar Pagamento</button>
-                                <button class="btn" style="background: #ef4444; flex: 1;" onclick="app.updateTicketStatus('${ticket.id}', 'cancelled')">Recusar</button>
+                    <tr>
+                        <td><strong>${this.escapeHTML(ticket.raffles.title)}</strong></td>
+                        <td>${this.escapeHTML(ticket.buyer_name)}</td>
+                        <td>${this.escapeHTML(ticket.buyer_phone)}</td>
+                        <td><span class="badge" style="background: var(--primary); color: white;">${ticket.number_selected}</span></td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn" style="background: var(--success); padding: 6px 12px; font-size: 0.8rem; width: auto;" onclick="app.updateTicketStatus('${ticket.id}', 'paid')">Confirmar</button>
+                                <button class="btn" style="background: #ef4444; padding: 6px 12px; font-size: 0.8rem; width: auto;" onclick="app.updateTicketStatus('${ticket.id}', 'cancelled')">Recusar</button>
                             </div>
-                        </div>
-                    </div>
+                        </td>
+                    </tr>
                 `).join('');
             },
 
