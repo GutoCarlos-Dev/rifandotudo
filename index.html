@@ -37,7 +37,8 @@
 
             <div id="payment-screen" style="display: none;" class="payment-card">
                 <h2 style="color: var(--success)">Reserva Realizada! 🎉</h2>
-                <p>Para confirmar sua participação, faça o PIX:</p>
+                <p>Pagamento para: <strong id="display-creator">---</strong></p>
+                <p>Chave PIX:</p>
                 <div class="pix-box" id="display-pix">---</div>
                 <p>Valor Total: <strong id="display-total">R$ 0,00</strong></p>
                 <button class="btn" style="background: #64748b; margin-bottom: 10px;" onclick="copyPix()">Copiar Chave PIX</button>
@@ -202,6 +203,7 @@
             
             const total = (selectedNumbers.length * ticketPrice).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
             document.getElementById('display-pix').innerText = raffleData.pix_key;
+            document.getElementById('display-creator').innerText = raffleData.creator_name || "Organizador";
             document.getElementById('display-total').innerText = total;
         }
 
@@ -215,16 +217,18 @@
             const name = document.getElementById('buyer-name').value;
             const numbers = selectedNumbers.sort((a,b) => a-b).join(', ');
             const total = (selectedNumbers.length * ticketPrice).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+            const cleanPhone = raffleData.whatsapp_contact.replace(/\D/g,'');
             
             const text = encodeURIComponent(
                 `✅ *Comprovante de Reserva*\n\n` +
                 `*Rifa:* ${raffleData.title}\n` +
+                `*Organizador:* ${raffleData.creator_name}\n` +
                 `*Nome:* ${name}\n` +
                 `*Números:* ${numbers}\n` +
                 `*Total:* ${total}\n\n` +
                 `Estou enviando o comprovante em anexo...`
             );
-            window.open(`https://wa.me/${raffleData.pix_key.replace(/\D/g,'')}?text=${text}`, '_blank');
+            window.open(`https://wa.me/${cleanPhone}?text=${text}`, '_blank');
         }
 
         window.buy = buy; // Torna a função global para o botão

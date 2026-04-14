@@ -25,7 +25,9 @@
                 <input type="text" id="title" placeholder="Título">
                 <input type="number" id="price" placeholder="Preço (R$)">
                 <input type="number" id="total" placeholder="Qtd Números">
-                <input type="text" id="pix" placeholder="Chave PIX do Cliente">
+                <input type="text" id="creator_name" placeholder="Nome do Organizador">
+                <input type="text" id="whatsapp_contact" placeholder="WhatsApp para Comprovantes (Ex: 11999999999)">
+                <input type="text" id="pix_key" placeholder="Chave PIX para Recebimento">
                 <button class="btn" onclick="app.saveRaffle()">Criar Rifa</button>
             </div>
 
@@ -74,7 +76,9 @@
                 const title = document.getElementById('title').value;
                 const price = document.getElementById('price').value;
                 const total = document.getElementById('total').value;
-                const pix = document.getElementById('pix').value;
+                const creator = document.getElementById('creator_name').value;
+                const whatsapp = document.getElementById('whatsapp_contact').value;
+                const pix = document.getElementById('pix_key').value;
 
                 // 2. Insere a rifa passando o owner_id (ID do usuário)
                 const { data, error } = await _supabase.from('raffles').insert([{ 
@@ -82,6 +86,8 @@
                     ticket_price: price, 
                     total_numbers: total, 
                     pix_key: pix,
+                    creator_name: creator,
+                    whatsapp_contact: whatsapp,
                     owner_id: user.id 
                 }]);
 
